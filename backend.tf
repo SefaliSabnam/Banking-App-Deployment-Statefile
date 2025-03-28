@@ -1,6 +1,6 @@
 # S3 Bucket for Terraform State Storage
 resource "aws_s3_bucket" "terraform_state" {
-  bucket        = "sefali-terraform-state-file ${random_id.bucket_suffix.hex}"  
+  bucket        = "sefali-terraform-state-1234 ${random_id.bucket_suffix.hex}"  
   force_destroy = true  
   tags = {
     Name        = "Terraform State Bucket"

@@ -29,7 +29,11 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
-                        sh 'terraform init'  // Run in the correct directory
+                        sh '''
+                            terraform init -backend-config="bucket=sefali-terraform-state-1234" \
+                                           -backend-config="key=terraform.tfstate" \
+                                           -backend-config="region=ap-south-1"
+                        '''
                     }
                 }
             }
@@ -39,7 +43,7 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
-                        sh 'terraform plan -out=tfplan'  // Ensure .tf files exist
+                        sh 'terraform plan -out=tfplan'
                     }
                 }
             }
