@@ -5,8 +5,7 @@ pipeline {
         DOCKER_IMAGE = "sefali26/banking-app"
         AWS_CREDENTIALS = 'AWS-Docker-Credentials'
         DOCKER_HUB_CREDENTIALS = 'DOCKER_HUB_TOKEN'
-        TF_STATE_BUCKET = credentials('TF_STATE_BUCKET') // Fetching S3 bucket name securely
-    }
+    }    
 
     stages {
         stage('Checkout') {
@@ -17,28 +16,15 @@ pipeline {
             }
         }
 
-        stage('Ensure S3 Bucket for Terraform State') {
-            steps {
-                script {
-                    withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
-                        sh """
-                        if aws s3 ls "s3://${env.TF_STATE_BUCKET}" > /dev/null 2>&1; then
-                            echo "Terraform state bucket exists."
-                        else
-                            echo "Creating S3 bucket..."
-                            aws s3 mb s3://${env.TF_STATE_BUCKET}
-                        fi
-                        """
-                    }
-                }
-            }
-        }
-
         stage('Terraform Init') {
             steps {
                 script {
                     withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
-                        sh 'terraform init'
+                        def initStatus = sh(script: 'terraform init -migrate-state', returnStatus: true)
+                        if (initStatus != 0) {
+                            echo "Backend configuration changed. Running terraform init -reconfigure..."
+                            sh 'terraform init -reconfigure'
+                        }
                     }
                 }
             }
@@ -93,12 +79,6 @@ pipeline {
                     sh "docker create --name temp_container ${DOCKER_IMAGE}:latest"
                     sh "docker cp temp_container:/usr/share/nginx/html ./website-content"
                     sh "docker rm temp_container"
-
-                    // Deploy extracted files to S3
-                    withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
-                        sh "aws s3 sync ./website-content s3://${env.TF_STATE_BUCKET} --delete"
-                        echo "Application deployed successfully!"
-                    }
                 }
             }
         }
@@ -109,7 +89,7 @@ pipeline {
             echo 'Pipeline execution completed!'
         }
         success {
-            echo 'Deployment to S3 was successful!'
+            echo 'Deployment was successful!'
         }
         failure {
             echo 'Deployment failed!'
