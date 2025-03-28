@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "sefali26/banking-app"
-        AWS_CREDENTIALS = 'AWS-Docker-Credentials'
+        AWS_CREDENTIALS = 'AWS-DOCKER-CREDENTIALS'
         DOCKER_HUB_CREDENTIALS = 'DOCKER_HUB_TOKEN'
     }    
 
