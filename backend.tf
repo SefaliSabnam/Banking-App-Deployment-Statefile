@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "terraform_state" {
-  bucket        = "sefali-terraform-state-${random_id.bucket_suffix.hex}"
+  bucket        = "sefali-terraform-state-1234"
   force_destroy = true  
 
   tags = {
@@ -25,7 +25,7 @@ resource "aws_s3_bucket_public_access_block" "state_access" {
 
 terraform {
   backend "s3" {
-    bucket         = "sefali-terraform-state-${random_id.bucket_suffix.hex}"
+    bucket         = "sefali-terraform-state-1234"  # Fixed Bucket Name
     key            = "terraform.tfstate"
     region         = "ap-south-1"
     encrypt        = true
