@@ -3,15 +3,33 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "sefali26/banking-app"
-        AWS_CREDENTIALS = 'AWS-DOCKER-CREDENTIALS'
+        AWS_CREDENTIALS = 'AWS-Docker-Credentials'
         DOCKER_HUB_CREDENTIALS = 'DOCKER_HUB_TOKEN'
+        TF_STATE_BUCKET = credentials('TF_STATE_BUCKET') // Fetching S3 bucket name securely
     }
 
     stages {
         stage('Checkout') {
             steps {
                 script {
-                    git credentialsId: 'github-token', url: 'https://github.com/SefaliSabnam/DEPLOYMENT.git', branch: env.BRANCH_NAME
+                    git credentialsId: 'github-token', url: 'https://github.com/SefaliSabnam/Banking-App-Deployment-Statefile.git', branch: env.BRANCH_NAME
+                }
+            }
+        }
+
+        stage('Ensure S3 Bucket for Terraform State') {
+            steps {
+                script {
+                    withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
+                        sh """
+                        if aws s3 ls "s3://${env.TF_STATE_BUCKET}" > /dev/null 2>&1; then
+                            echo "Terraform state bucket exists."
+                        else
+                            echo "Creating S3 bucket..."
+                            aws s3 mb s3://${env.TF_STATE_BUCKET}
+                        fi
+                        """
+                    }
                 }
             }
         }
@@ -37,17 +55,11 @@ pipeline {
         }
 
         stage('Terraform Apply') {
-            when {
-                expression { env.BRANCH_NAME == 'main' }
-            }
+            when { expression { env.BRANCH_NAME == 'main' } }
             steps {
                 script {
                     withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
                         sh 'terraform apply -auto-approve tfplan'
-
-                        // Fetch the created S3 bucket name
-                        env.S3_BUCKET = sh(script: "terraform output -raw bucket_name", returnStdout: true).trim()
-                        echo "S3 Bucket: ${env.S3_BUCKET}"
                     }
                 }
             }
@@ -75,20 +87,17 @@ pipeline {
         }
 
         stage('Extract and Deploy Application') {
-            when {
-                expression { env.BRANCH_NAME == 'main' }
-            }
+            when { expression { env.BRANCH_NAME == 'main' } }
             steps {
                 script {
-                    // Create container and extract files
                     sh "docker create --name temp_container ${DOCKER_IMAGE}:latest"
                     sh "docker cp temp_container:/usr/share/nginx/html ./website-content"
                     sh "docker rm temp_container"
 
                     // Deploy extracted files to S3
                     withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
-                        sh "aws s3 sync ./website-content s3://${env.S3_BUCKET} --delete"
-                        echo "Application deployed: http://${env.S3_BUCKET}.s3-website.ap-south-1.amazonaws.com"
+                        sh "aws s3 sync ./website-content s3://${env.TF_STATE_BUCKET} --delete"
+                        echo "Application deployed successfully!"
                     }
                 }
             }
