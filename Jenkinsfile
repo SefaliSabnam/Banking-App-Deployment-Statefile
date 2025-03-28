@@ -20,7 +20,7 @@ pipeline {
                 script {
                     sh 'pwd'
                     sh 'ls -la'
-                    sh 'ls -la terraform || true'  // Check if terraform directory exists
+                    sh 'ls -la terraform || true'  
                 }
             }
         }
