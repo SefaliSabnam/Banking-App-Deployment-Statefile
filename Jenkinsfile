@@ -20,10 +20,10 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
-                        def initStatus = sh(script: 'terraform init -migrate-state', returnStatus: true)
+                        def initStatus = sh(script: 'terraform init -migrate-state -input=false', returnStatus: true)
                         if (initStatus != 0) {
                             echo "Backend configuration changed. Running terraform init -reconfigure..."
-                            sh 'terraform init -reconfigure'
+                            sh 'terraform init -reconfigure -input=false'
                         }
                     }
                 }
@@ -34,7 +34,7 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
-                        sh 'terraform plan -out=tfplan'
+                        sh 'terraform plan -out=tfplan -input=false'
                     }
                 }
             }
@@ -45,7 +45,7 @@ pipeline {
             steps {
                 script {
                     withAWS(credentials: AWS_CREDENTIALS, region: 'ap-south-1') {
-                        sh 'terraform apply -auto-approve tfplan'
+                        sh 'terraform apply -auto-approve tfplan -input=false'
                     }
                 }
             }
