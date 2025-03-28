@@ -4,7 +4,7 @@ resource "random_id" "bucket_suffix" {
 
 # S3 Bucket for Banking App
 resource "aws_s3_bucket" "banking_app" {
-  bucket = "${var.bucket_prefix}-${random_id.bucket_suffix.hex}"
+  bucket = "${var.bucket_prefix}-${random_id.bucket_suffix.id}"
 
   tags = {
     Name        = "BankingAppBucket"
@@ -12,6 +12,22 @@ resource "aws_s3_bucket" "banking_app" {
   }
 }
 
+# Ownership Controls (required for ACLs to work properly)
+resource "aws_s3_bucket_ownership_controls" "ownership" {
+  bucket = aws_s3_bucket.banking_app.id
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+# Set ACL for Public Read Access
+resource "aws_s3_bucket_acl" "acl" {
+  depends_on = [aws_s3_bucket_ownership_controls.ownership]
+  bucket     = aws_s3_bucket.banking_app.id
+  acl        = "public-read"
+}
+
+# Block Public Access Configuration (Set to allow public access for website hosting)
 resource "aws_s3_bucket_public_access_block" "public_access" {
   bucket                  = aws_s3_bucket.banking_app.id
   block_public_acls       = false
@@ -20,6 +36,7 @@ resource "aws_s3_bucket_public_access_block" "public_access" {
   restrict_public_buckets = false
 }
 
+# Enable Static Website Hosting
 resource "aws_s3_bucket_website_configuration" "website" {
   bucket = aws_s3_bucket.banking_app.id
 
@@ -38,23 +55,17 @@ resource "aws_s3_bucket_policy" "public_policy" {
         Effect    = "Allow"
         Principal = "*"
         Action    = "s3:GetObject"
-        Resource  = "arn:aws:s3:::${aws_s3_bucket.banking_app.id}/*",
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion": "ap-south-1"
-          }
-        }
+        Resource  = "${aws_s3_bucket.banking_app.arn}/*"
       }
     ]
   })
 }
 
-
-
+# Outputs
 output "bucket_name" {
   value = aws_s3_bucket.banking_app.id
 }
 
 output "website_url" {
-  value = aws_s3_bucket.banking_app.website_endpoint
+  value = aws_s3_bucket_website_configuration.website.website_endpoint
 }
