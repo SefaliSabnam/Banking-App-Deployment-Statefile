@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEFALI Banking</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background-color: #e3f2fd; padding: 50px; }
+        .container { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 300px; margin: auto; }
+        h1 { color: #007bff; }
+        p { font-size: 18px; }
+        .balance { font-size: 24px; font-weight: bold; color: green; }
+        button { padding: 10px 20px; margin: 10px; background-color: #007bff; color: white; border: none; cursor: pointer; border-radius: 5px; }
+        button:hover { background-color: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to SEFALI Banking</h1>
+        <p>Securely manage your accounts online.</p>
+        <p>Current Balance: <span class="balance" id="balance">$1000</span></p>
+        <button onclick="deposit()">Deposit $100</button>
+        <button onclick="withdraw()">Withdraw $50</button>
+    </div>
+
+    <script>
+        let balance = 1000;
+
+        function deposit() {
+            balance += 100;
+            updateBalance();
+        }
+
+        function withdraw() {
+            if (balance >= 50) {
+                balance -= 50;
+                updateBalance();
+            } else {
+                alert("Insufficient funds!");
+            }
+        }
+
+        function updateBalance() {
+            document.getElementById("balance").textContent = "$" + balance;
+        }
+    </script>
+</body>
+</html>
